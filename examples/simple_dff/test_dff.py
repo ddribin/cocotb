@@ -28,6 +28,7 @@ async def dff_simple_test(dut):
         assert LogicArray(dut.q.value) == expected_val, f"output q was incorrect on the {i}th cycle"
         expected_val = LogicArray(val)
 
+    # Check the final input on the next clock
     await RisingEdge(dut.clk)  # Synchronize with the clock
     assert LogicArray(dut.q.value) == expected_val, f"output q was incorrect on the last cycle"
 
@@ -39,7 +40,7 @@ async def dff_simple_test_with_initial(dut):
     cocotb.start_soon(clock.start())  # Start the clock
 
     await RisingEdge(dut.clk)  # Synchronize with the clock
-    expected_val = 0
+    expected_val = 0 # Initial value
     for i in range(10):
         val = random.randint(0, 1)
         dut.d.value = val  # Assign the random value val to the input port d
@@ -47,7 +48,8 @@ async def dff_simple_test_with_initial(dut):
         assert dut.q.value == expected_val, f"output q was incorrect on the {i}th cycle"
         expected_val = val
 
-    await RisingEdge(dut.clk)  # Synchronize with the clock
+    # Check the final input on the next clock
+    await RisingEdge(dut.clk)
     assert dut.q.value == expected_val, f"output q was incorrect on the last cycle"
 
 def test_simple_dff_runner():
