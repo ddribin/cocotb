@@ -8,7 +8,8 @@ from pathlib import Path
 import cocotb
 from cocotb.clock import Clock
 from cocotb.runner import get_runner
-from cocotb.triggers import FallingEdge
+from cocotb.triggers import FallingEdge, RisingEdge
+from cocotb.types import LogicArray
 
 
 @cocotb.test()
@@ -18,13 +19,36 @@ async def dff_simple_test(dut):
     clock = Clock(dut.clk, 10, units="us")  # Create a 10us period clock on port clk
     cocotb.start_soon(clock.start())  # Start the clock
 
-    await FallingEdge(dut.clk)  # Synchronize with the clock
+    await RisingEdge(dut.clk)  # Synchronize with the clock
+    expected_val = LogicArray("Z")
     for i in range(10):
         val = random.randint(0, 1)
         dut.d.value = val  # Assign the random value val to the input port d
-        await FallingEdge(dut.clk)
-        assert dut.q.value == val, f"output q was incorrect on the {i}th cycle"
+        await RisingEdge(dut.clk)
+        assert LogicArray(dut.q.value) == expected_val, f"output q was incorrect on the {i}th cycle"
+        expected_val = LogicArray(val)
 
+    await RisingEdge(dut.clk)  # Synchronize with the clock
+    assert LogicArray(dut.q.value) == expected_val, f"output q was incorrect on the last cycle"
+
+@cocotb.test()
+async def dff_simple_test_with_initial(dut):
+    """Test that d propagates to q"""
+
+    clock = Clock(dut.clk, 10, units="us")  # Create a 10us period clock on port clk
+    cocotb.start_soon(clock.start())  # Start the clock
+
+    await RisingEdge(dut.clk)  # Synchronize with the clock
+    expected_val = 0
+    for i in range(10):
+        val = random.randint(0, 1)
+        dut.d.value = val  # Assign the random value val to the input port d
+        await RisingEdge(dut.clk)
+        assert dut.q.value == expected_val, f"output q was incorrect on the {i}th cycle"
+        expected_val = val
+
+    await RisingEdge(dut.clk)  # Synchronize with the clock
+    assert dut.q.value == expected_val, f"output q was incorrect on the last cycle"
 
 def test_simple_dff_runner():
 
